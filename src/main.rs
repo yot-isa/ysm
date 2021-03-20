@@ -9,6 +9,7 @@ use structopt::StructOpt;
 
 mod error;
 mod instruction;
+mod reader;
 mod span;
 mod tokenizer;
 
@@ -25,14 +26,10 @@ fn main() -> Result<(), codespan_reporting::files::Error> {
     let codespan_writer = StandardStream::stderr(ColorChoice::Always);
     let codespan_config = codespan_reporting::term::Config::default();
 
-    let source_contents = match fs::read_to_string(&config.source_path) {
+    let source_contents = match reader::read(&config.source_path) {
         Ok(source_contents) => source_contents,
         Err(err) => {
-            let diagnostic = Diagnostic::error().with_message(format!(
-                "couldn't read {}: {}",
-                config.source_path.to_str().unwrap(),
-                err
-            ));
+            let diagnostic = Diagnostic::error().with_message(format!("{}", err));
             term::emit(
                 &mut codespan_writer.lock(),
                 &codespan_config,
