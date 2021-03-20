@@ -5,3 +5,6 @@ authors = ["Karol Belina <karolbelina@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+codespan-reporting = "0.11.1"
+structopt = "0.3.21"
+unicode-segmentation = "1.6.0"

@@ -1,0 +1,15 @@
+%c6
+#0f
+mfch
+
+:mfch
+  swp^
+:loop
+  dup1 eqz1 @clear jmp?
+  dec1
+  dup^ fcm1 swp1
+  %01 add^
+  @loop jmp
+:clear
+  drp1 drp^
+  jmp
