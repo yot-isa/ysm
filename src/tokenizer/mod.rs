@@ -204,9 +204,7 @@ pub(super) fn tokenize(input_string: &str) -> Result<Vec<Spanned<Token>>, Vec<Er
             Some(Spanned { node: c, .. }) => match parse_identifier(&symbols, &mut i, false) {
                 Ok(Spanned { node: id, span }) => {
                     if let Some(opcode) = MNEMONICS.iter().position(|&m| m == id) {
-                        tokens.push(
-                            Token::PrimitiveInstruction(opcode as u8).spanning(span),
-                        );
+                        tokens.push(Token::PrimitiveInstruction(opcode as u8).spanning(span));
                     } else {
                         tokens.push(Token::SubroutineJump(id).spanning(span));
                     }
