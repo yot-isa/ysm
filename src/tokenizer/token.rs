@@ -21,3 +21,4 @@ pub enum DataLiteral {
 }
 
 impl_spanning!(Token);
+impl_spanning!(DataLiteral);

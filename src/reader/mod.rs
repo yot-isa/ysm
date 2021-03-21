@@ -5,5 +5,6 @@ use std::path::Path;
 mod error;
 
 pub(super) fn read(path: &Path) -> Result<String, Error> {
-    fs::read_to_string(path).map_err(|io_error| Error::CouldNotReadFile(path.to_path_buf(), io_error))
+    fs::read_to_string(path)
+        .map_err(|io_error| Error::CouldNotReadFile(path.to_path_buf(), io_error))
 }

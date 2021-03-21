@@ -2,13 +2,12 @@ use std::fmt;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Location {
-    pub column: usize,
-    pub line: usize,
+    pub offset: usize,
 }
 
 impl Location {
     pub fn new() -> Location {
-        Location { column: 0, line: 0 }
+        Location { offset: 0 }
     }
 }
 
@@ -53,17 +52,11 @@ impl Default for Span {
     }
 }
 
-impl From<((usize, usize), (usize, usize))> for Span {
-    fn from(tuples: ((usize, usize), (usize, usize))) -> Span {
+impl From<(usize, usize)> for Span {
+    fn from(tuple: (usize, usize)) -> Span {
         Span {
-            from: Location {
-                column: (tuples.0).0,
-                line: (tuples.0).1,
-            },
-            to: Location {
-                column: (tuples.1).0,
-                line: (tuples.1).1,
-            },
+            from: Location { offset: tuple.0 },
+            to: Location { offset: tuple.1 },
         }
     }
 }
@@ -104,5 +97,6 @@ macro_rules! impl_spanning {
 }
 
 impl_spanning!(String);
+impl_spanning!(u64);
 impl_spanning!(usize);
 impl_spanning!(&'a str);

@@ -40,9 +40,28 @@ fn main() -> Result<(), codespan_reporting::files::Error> {
         }
     };
 
-    // let file_id = files.add(config.source_path, source_contents);
+    let file_id = files.add(
+        config.source_path.to_string_lossy().to_string(),
+        &source_contents,
+    );
 
-    tokenizer::tokenize(&source_contents);
+    let tokens = match tokenizer::tokenize(&source_contents) {
+        Ok(tokens) => tokens,
+        Err(errs) => {
+            for err in errs.iter() {
+                let diagnostic = Diagnostic::error().with_message(format!("{}", err));
+                term::emit(
+                    &mut codespan_writer.lock(),
+                    &codespan_config,
+                    &files,
+                    &diagnostic,
+                )?;
+            }
+            return Ok(());
+        }
+    };
+
+    println!("{:#?}", tokens);
 
     Ok(())
 }
