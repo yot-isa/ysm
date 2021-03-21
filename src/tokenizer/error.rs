@@ -8,6 +8,7 @@ pub enum Error {
     DigitInvalid(char, Span),
     DigitExpected(Span),
     DataLiteralTooLarge(Span),
+    IdentifierExpected(Span),
 }
 
 impl fmt::Display for Error {
@@ -17,6 +18,7 @@ impl fmt::Display for Error {
             Error::DigitInvalid(c, _) => write!(f, "invalid digit `{}` in a data literal", c),
             Error::DigitExpected(_) => write!(f, "expected a digit"),
             Error::DataLiteralTooLarge(_) => write!(f, "data literal is too large"),
+            Error::IdentifierExpected(_) => write!(f, "expected an identifier"),
         }
     }
 }

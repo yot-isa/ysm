@@ -1,14 +1,13 @@
-use super::super::instruction::PrimitiveInstruction;
 use super::{Span, Spanned, Spanning};
 use crate::impl_spanning;
 
 #[derive(Debug, Clone)]
 pub enum Token {
-    PrimitiveInstruction(PrimitiveInstruction),
+    PrimitiveInstruction(u8),
     SubroutineJump(String),
     DataLiteral(DataLiteral),
     AddressLiteral(u64),
-    LabelDeclaration(String),
+    LabelDefinition(String),
     LabelLiteral(String),
 }
 
