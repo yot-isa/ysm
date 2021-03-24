@@ -13,7 +13,3 @@ mfch
 :clear
   drp1 drp^
   jmp
-
-; lit^ c6 lit1 0f lit^ ___ jsr swp^ dup1 eqz1 lit^ ___ jmp? dec1 dup^ fcm1 swp1 lit^ 01 add^ lit^ ___ jmp drp1 drp^ jmp
-; mfch -> 7; loop -> 8; clear -> 23
-; 5 -> mfch; 11 -> clear; 21 -> loop

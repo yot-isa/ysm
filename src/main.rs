@@ -71,7 +71,16 @@ fn main() {
 
     let binary: Vec<u8> = match emitter::emit(&tokens, YotType::Y8) {
         Ok(binary) => binary,
-        Err(()) => {
+        Err(errs) => {
+            for err in errs.iter() {
+                let diagnostic = Diagnostic::error().with_message(format!("{}", err));
+                term::emit(
+                    &mut codespan_writer.lock(),
+                    &codespan_config,
+                    &files,
+                    &diagnostic,
+                );
+            }
             return;
         }
     };
