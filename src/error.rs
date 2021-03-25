@@ -1,62 +1,57 @@
-use super::span::{Span, Spanned, Spanning};
+use super::reader;
 use super::tokenizer;
-use crate::impl_spanning;
+use super::emitter;
+use super::writer;
 use std::fmt;
-use std::io;
+use super::reporter::{Report, Reporter};
 
-pub struct Error {
-    pub kind: ErrorKind,
-    pub span: Option<Span>,
+#[derive(Debug)]
+pub enum Error {
+    Reader(reader::Error),
+    Tokenizer(tokenizer::Error),
+    Emitter(emitter::Error),
+    Writer(writer::Error),
 }
 
-pub enum ErrorKind {
-    Io(io::Error),
-    Tokenizer(tokenizer::error::Error),
-}
-
-impl_spanning!(Error);
-
-impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Error {
-        Error {
-            kind: ErrorKind::Io(error),
-            span: None,
-        }
+impl From<reader::Error> for Error {
+    fn from(error: reader::Error) -> Error {
+        Error::Reader(error)
     }
 }
 
-impl From<Spanned<tokenizer::error::Error>> for Error {
-    fn from(error: Spanned<tokenizer::error::Error>) -> Error {
-        Error {
-            kind: ErrorKind::Tokenizer(error.node),
-            span: Some(error.span),
-        }
+impl From<tokenizer::Error> for Error {
+    fn from(error: tokenizer::Error) -> Error {
+        Error::Tokenizer(error)
     }
 }
 
-impl fmt::Debug for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.kind {
-            ErrorKind::Io(inner) => write!(f, "{}", inner),
-            ErrorKind::Tokenizer(inner) => write!(f, "{}", inner),
+impl From<emitter::Error> for Error {
+    fn from(error: emitter::Error) -> Error {
+        Error::Emitter(error)
+    }
+}
+
+impl From<writer::Error> for Error {
+    fn from(error: writer::Error) -> Error {
+        Error::Writer(error)
+    }
+}
+
+impl Report for Error {
+    fn report(&self, r: &Reporter) {
+        match &self {
+            Error::Reader(error) => error.report(r),
+            Error::Tokenizer(error) => error.report(r),
+            Error::Emitter(error) => error.report(r),
+            Error::Writer(error) => error.report(r),
         }
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.kind {
-            ErrorKind::Io(inner) => write!(f, "{}", inner),
-            ErrorKind::Tokenizer(inner) => write!(f, "{}", inner),
-        }
+        write!(f, "")
     }
 }
 
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self.kind {
-            ErrorKind::Io(inner) => Some(inner),
-            ErrorKind::Tokenizer(inner) => Some(inner),
-        }
-    }
-}
+impl std::error::Error for Error {}

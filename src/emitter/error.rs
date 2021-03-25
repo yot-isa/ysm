@@ -1,5 +1,4 @@
 use super::Span;
-use crate::impl_spanning;
 use std::fmt;
 use crate::reporter::{Diagnostic, Report, Reporter, Label, LabelStyle};
 
@@ -45,10 +44,7 @@ impl Report for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            Error::LabelDefinedMoreThanOnce { label, .. } => write!(f, "label `{}` is defined more than once in this scope", label),
-            Error::CannotFindLabel { label, .. } => write!(f, "cannot find label `{}` in this scope", label),
-        }
+        write!(f, "")
     }
 }
 

@@ -17,11 +17,3 @@ pub static MNEMONICS: [&str; 256] = [
     "sei?",  "gth^?", "rob^?", "sts3?", "dup3?", "ovr3?", "rob3?", "stm3?", "dec3?", "sub3?", "sbb3?", "and3?", "xor3?", "shr3?", "nez3?", "lth3?",
     "cli?",  "lth^?", "ext?",  "sts4?", "dup4?", "ovr4?", "rob4?", "stm4?", "dec4?", "sub4?", "sbb4?", "and4?", "xor4?", "shr4?", "nez4?", "lth4?",
 ];
-
-#[derive(Debug, Clone, Copy)]
-pub enum YotType {
-    Y8 = 1,
-    Y16 = 2,
-    Y32 = 4,
-    Y64 = 8,
-}

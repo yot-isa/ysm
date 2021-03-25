@@ -1,5 +1,4 @@
 use super::Span;
-use crate::impl_spanning;
 use std::fmt;
 use crate::reporter::{Diagnostic, Report, Reporter, Label, LabelStyle};
 
@@ -61,13 +60,7 @@ impl Report for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            Error::SymbolInvalid { symbol, .. } => write!(f, "invalid symbol `{}`", symbol),
-            Error::DigitInvalid { digit, .. }  => write!(f, "invalid digit `{}` in a data literal", digit),
-            Error::DigitExpected { .. } => write!(f, "expected a digit"),
-            Error::DataLiteralTooLarge { .. } => write!(f, "data literal is too large"),
-            Error::IdentifierExpected { .. } => write!(f, "expected an identifier"),
-        }
+        write!(f, "")
     }
 }
 
