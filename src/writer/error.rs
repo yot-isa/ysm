@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 use std::path::PathBuf;
-use crate::reporter::{Diagnostic, Report, Reporter, Label, LabelStyle};
+use crate::reporter::{Diagnostic, Report, Reporter};
 
 #[derive(Debug)]
 pub enum Error {
@@ -21,14 +21,7 @@ impl Report for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            Error::CouldNotWriteFile { file_path, io_error } => write!(
-                f,
-                "couldn't write {}: {}",
-                file_path.to_string_lossy(),
-                io_error
-            ),
-        }
+        write!(f, "")
     }
 }
 

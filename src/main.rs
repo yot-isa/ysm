@@ -1,12 +1,10 @@
-use error::Error;
-use std::fs;
-use std::path::PathBuf;
 use structopt::StructOpt;
-use span::{Location, Span, Spanned, Spanning};
+use span::{Span, Spanned};
 use tokenizer::token::{Token, DataLiteral};
-use instruction::YotType;
 use reporter::{Reporter, Report};
+use argument_parser::{Config, YotType};
 
+mod argument_parser;
 mod emitter;
 mod error;
 mod instruction;
@@ -15,16 +13,6 @@ mod reporter;
 mod span;
 mod tokenizer;
 mod writer;
-
-#[derive(Debug, StructOpt)]
-pub struct Config {
-    /// Yot Assembly source file path
-    #[structopt(name = "SOURCE FILE", parse(from_os_str))]
-    pub source_path: PathBuf,
-    /// Output binary file path
-    #[structopt(name = "OUTPUT FILE", parse(from_os_str))]
-    pub output_path: PathBuf,
-}
 
 fn main() {
     let config = Config::from_args();
@@ -53,7 +41,7 @@ fn main() {
         }
     };
 
-    let binary: Vec<u8> = match emitter::emit(&tokens, YotType::Y8) {
+    let binary: Vec<u8> = match emitter::emit(&tokens, config.yot_type) {
         Ok(binary) => binary,
         Err(errs) => {
             for err in errs.iter() {

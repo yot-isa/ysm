@@ -1,6 +1,6 @@
 use super::instruction::MNEMONICS;
 use super::span::{Location, Span, Spanned, Spanning};
-use error::Error;
+pub use error::Error;
 use token::{DataLiteral, Token};
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -202,7 +202,7 @@ pub(super) fn tokenize(input_string: &str, file_id: usize) -> Result<Vec<Spanned
                 }
                 Err(err) => errors.push(err),
             },
-            Some(Spanned { node: c, .. }) => match parse_identifier(&symbols, &mut i, false) {
+            Some(Spanned { .. }) => match parse_identifier(&symbols, &mut i, false) {
                 Ok(Spanned { node: id, span }) => {
                     if let Some(opcode) = MNEMONICS.iter().position(|&m| m == id) {
                         tokens.push(Token::PrimitiveInstruction(opcode as u8).spanning(span));
@@ -212,10 +212,6 @@ pub(super) fn tokenize(input_string: &str, file_id: usize) -> Result<Vec<Spanned
                 }
                 Err(_) => unreachable!(),
             },
-            Some(Spanned { node: c, span }) => {
-                errors.push(Error::SymbolInvalid { symbol: (*c).to_string(), span: *span });
-                i += 1;
-            }
             None => break 'tokens,
         }
     }

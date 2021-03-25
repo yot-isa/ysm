@@ -1,4 +1,4 @@
-use error::Error;
+pub use error::Error;
 use std::fs;
 use std::path::Path;
 use std::io::Write;

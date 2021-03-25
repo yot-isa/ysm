@@ -36,7 +36,7 @@ impl<'a> Reporter<'a> {
                     ).with_message(&label.message),
                 }
             }).collect());
-        codespan_reporting::term::emit(
+        let _ = codespan_reporting::term::emit(
             &mut self.writer.lock(),
             &self.config,
             &self.files,

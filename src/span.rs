@@ -21,15 +21,6 @@ impl Span {
             to: end.to,
         }
     }
-
-    pub fn between(start: &Span, end: &Span) -> Span {
-        assert!(start.file_id == end.file_id);
-        Span {
-            file_id: start.file_id,
-            from: start.to,
-            to: end.from,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]

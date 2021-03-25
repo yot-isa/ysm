@@ -1,8 +1,8 @@
-use super::span::{Location, Span, Spanned, Spanning};
-use super::instruction::YotType;
+use super::span::{Span, Spanned, Spanning};
+use super::YotType;
 use super::{Token, DataLiteral};
 use std::collections::HashMap;
-use error::Error;
+pub use error::Error;
 
 mod error;
 
@@ -98,8 +98,6 @@ pub(super) fn emit(tokens: &[Spanned<Token>], yot_type: YotType) -> Result<Vec<u
             }
         }
     }
-
-    let i: usize = i;
 
     for (offset, Spanned { node: label, span }) in encountered_label_literals.into_iter() {
         let mut shifted_address: usize = match encountered_label_definitions.get(&label) {
