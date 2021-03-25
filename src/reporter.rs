@@ -13,7 +13,17 @@ impl<'a> Reporter<'a> {
         Reporter {
             files: codespan_reporting::files::SimpleFiles::new(),
             writer: codespan_reporting::term::termcolor::StandardStream::stderr(codespan_reporting::term::termcolor::ColorChoice::Always),
-            config: codespan_reporting::term::Config::default(),
+            config: codespan_reporting::term::Config {
+                display_style: codespan_reporting::term::DisplayStyle::Rich,
+                tab_width: 2,
+                #[cfg(windows)]
+                styles: with_blue(codespan_reporting::term::termcolor::Color::Cyan),
+                #[cfg(not(windows))]
+                styles: with_blue(codespan_reporting::term::termcolor::Color::Blue),
+                chars: codespan_reporting::term::Chars::default(),
+                start_context_lines: 3,
+                end_context_lines: 1,
+            },
         }
     }
 
@@ -63,4 +73,30 @@ pub struct Label {
 
 pub trait Report {
     fn report(&self, r: &Reporter);
+}
+
+fn with_blue(blue: codespan_reporting::term::termcolor::Color) -> codespan_reporting::term::Styles {
+    use codespan_reporting::term::{termcolor::{Color, ColorSpec}, Styles};
+
+    let header = ColorSpec::new().set_bold(true).set_intense(true).clone();
+
+    Styles {
+        header_bug: header.clone().set_fg(Some(Color::Red)).clone(),
+        header_error: header.clone().set_fg(Some(Color::Red)).clone(),
+        header_warning: header.clone().set_fg(Some(Color::Yellow)).clone(),
+        header_note: header.clone().set_fg(Some(Color::Green)).clone(),
+        header_help: header.clone().set_fg(Some(Color::Cyan)).clone(),
+        header_message: header.clone(),
+
+        primary_label_bug: header.clone().set_fg(Some(Color::Red)).clone(),
+        primary_label_error: header.clone().set_fg(Some(Color::Red)).clone(),
+        primary_label_warning: header.clone().set_fg(Some(Color::Yellow)).clone(),
+        primary_label_note: header.clone().set_fg(Some(Color::Green)).clone(),
+        primary_label_help: header.clone().set_fg(Some(Color::Cyan)).clone(),
+        secondary_label: header.clone().set_fg(Some(blue)).clone(),
+
+        line_number: header.clone().set_fg(Some(blue)).clone(),
+        source_border: header.clone().set_fg(Some(blue)).clone(),
+        note_bullet: header.clone().set_fg(Some(blue)).clone(),
+    }
 }
