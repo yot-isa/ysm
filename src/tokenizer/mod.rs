@@ -66,7 +66,7 @@ fn parse_identifier<'a>(
             }
             _ => {
                 return Ok(match length {
-                    0 => return Err(Error::IdentifierExpected(os)),
+                    0 => return Err(Error::IdentifierExpected { span: os }),
                     _ => label,
                 }
                 .spanning(Span::combine(&os, &oe)));
@@ -93,16 +93,16 @@ fn parse_data_literal<'a>(
                 *i += 1;
             }
             Some(Spanned { node: c, span: o }) if !is_delimiter(c) => {
-                return Err(Error::DigitInvalid(c.chars().next().unwrap(), *o));
+                return Err(Error::DigitInvalid { digit: c.chars().next().unwrap(), span: *o });
             }
             _ => {
                 return Ok(match length {
-                    0 => return Err(Error::DigitExpected(os)),
+                    0 => return Err(Error::DigitExpected { span: os }),
                     1..=2 => DataLiteral::U8(value as u8),
                     3..=4 => DataLiteral::U16(value as u16),
                     5..=8 => DataLiteral::U32(value as u32),
                     9..=16 => DataLiteral::U64(value as u64),
-                    _ => return Err(Error::DataLiteralTooLarge(Span::combine(&os, &oe))),
+                    _ => return Err(Error::DataLiteralTooLarge { span: Span::combine(&os, &oe) }),
                 }
                 .spanning(Span::combine(&os, &oe)));
             }
@@ -128,11 +128,11 @@ fn parse_address_literal<'a>(
                 *i += 1;
             }
             Some(Spanned { node: c, span: o }) if !is_delimiter(c) => {
-                return Err(Error::DigitInvalid(c.chars().next().unwrap(), *o));
+                return Err(Error::DigitInvalid { digit: c.chars().next().unwrap(), span: *o });
             }
             _ => {
                 return Ok(match length {
-                    0 => return Err(Error::DigitExpected(os)),
+                    0 => return Err(Error::DigitExpected { span: os }),
                     _ => value,
                 }
                 .spanning(Span::combine(&os, &oe)));
@@ -212,7 +212,7 @@ pub(super) fn tokenize(input_string: &str) -> Result<Vec<Spanned<Token>>, Vec<Er
                 Err(_) => unreachable!(),
             },
             Some(Spanned { node: c, span }) => {
-                // errors.push(Error::SymbolInvalid((*c).to_string(), *span));
+                errors.push(Error::SymbolInvalid { symbol: (*c).to_string(), span: *span });
                 i += 1;
             }
             None => break 'tokens,

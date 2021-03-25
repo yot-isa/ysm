@@ -1,6 +1,7 @@
 use super::Span;
 use crate::impl_spanning;
 use std::fmt;
+use crate::reporter::{Diagnostic, Report, Reporter};
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
@@ -13,6 +14,19 @@ pub enum Error {
         label: String,
         span: Span,
     },
+}
+
+impl Report for Error {
+    fn report(&self, r: &Reporter) {
+        match &self {
+            Error::LabelDefinedMoreThanOnce { label, current_label_span, previously_defined_label_span } => r.write(Diagnostic {
+                message: format!("label `{}` is defined more than once in this scope", label),
+            }),
+            Error::CannotFindLabel { label, span } => r.write(Diagnostic {
+                message: format!("cannot find label `{}` in this scope", label),
+            })
+        }
+    }
 }
 
 impl fmt::Display for Error {
