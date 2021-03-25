@@ -27,15 +27,16 @@ fn is_whitespace(string: &str) -> bool {
     matches!(string.chars().next(), Some(ch) if ch.is_whitespace())
 }
 
-fn scan<'a>(string: &'a str) -> Vec<Spanned<&'a str>> {
+fn scan<'a>(string: &'a str, file_id: usize) -> Vec<Spanned<&'a str>> {
     string
         .graphemes(true)
-        .scan(Location::new(), |location, grapheme| {
+        .scan(Location { offset: 0 }, |location, grapheme| {
             let current_location = *location;
             (*location).offset += grapheme.chars().count();
             Some(Spanned {
                 node: grapheme,
                 span: Span {
+                    file_id,
                     from: current_location,
                     to: *location,
                 },
@@ -141,8 +142,8 @@ fn parse_address_literal<'a>(
     }
 }
 
-pub(super) fn tokenize(input_string: &str) -> Result<Vec<Spanned<Token>>, Vec<Error>> {
-    let symbols = scan(input_string);
+pub(super) fn tokenize(input_string: &str, file_id: usize) -> Result<Vec<Spanned<Token>>, Vec<Error>> {
+    let symbols = scan(input_string, file_id);
 
     let mut tokens = Vec::new();
     let mut errors = Vec::new();

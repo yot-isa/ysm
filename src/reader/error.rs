@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 use std::path::PathBuf;
-use crate::reporter::{Diagnostic, Report, Reporter};
+use crate::reporter::{Diagnostic, Report, Reporter, Label, LabelStyle};
 
 #[derive(Debug)]
 pub enum Error {
@@ -16,6 +16,7 @@ impl Report for Error {
         match &self {
             Error::CouldNotReadFile { file_path, io_error } => r.write(Diagnostic {
                 message: format!("couldn't read {}: {}", file_path.to_string_lossy(), io_error),
+                labels: vec![],
             }),
         }
     }

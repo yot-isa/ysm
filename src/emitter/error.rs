@@ -1,7 +1,7 @@
 use super::Span;
 use crate::impl_spanning;
 use std::fmt;
-use crate::reporter::{Diagnostic, Report, Reporter};
+use crate::reporter::{Diagnostic, Report, Reporter, Label, LabelStyle};
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
@@ -20,10 +20,24 @@ impl Report for Error {
     fn report(&self, r: &Reporter) {
         match &self {
             Error::LabelDefinedMoreThanOnce { label, current_label_span, previously_defined_label_span } => r.write(Diagnostic {
-                message: format!("label `{}` is defined more than once in this scope", label),
+                message: format!("label `{}` is defined multiple times", label),
+                labels: vec![Label {
+                    style: LabelStyle::Primary,
+                    span: *current_label_span,
+                    message: format!("`{}` redefined here", label),
+                }, Label {
+                    style: LabelStyle::Secondary,
+                    span: *previously_defined_label_span,
+                    message: format!("previous definition of the label `{}` here", label),
+                }],
             }),
             Error::CannotFindLabel { label, span } => r.write(Diagnostic {
                 message: format!("cannot find label `{}` in this scope", label),
+                labels: vec![Label {
+                    style: LabelStyle::Primary,
+                    span: *span,
+                    message: "not found in this scope".to_owned(),
+                }],
             })
         }
     }

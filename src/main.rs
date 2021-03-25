@@ -42,12 +42,8 @@ fn main() {
         config.source_path,
         &source_contents,
     );
-    // let file_id = repoter.add_file(
-    //     config.source_path.to_string_lossy().to_string(),
-    //     &source_contents,
-    // );
 
-    let tokens: Vec<Spanned<Token>> = match tokenizer::tokenize(&source_contents) {
+    let tokens: Vec<Spanned<Token>> = match tokenizer::tokenize(&source_contents, file_id) {
         Ok(tokens) => tokens,
         Err(errs) => {
             for err in errs.iter() {
