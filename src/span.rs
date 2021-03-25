@@ -5,58 +5,29 @@ pub struct Location {
     pub offset: usize,
 }
 
-impl Location {
-    pub fn new() -> Location {
-        Location { offset: 0 }
-    }
-}
-
-impl Default for Location {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Span {
+    pub file_id: usize,
     pub from: Location,
     pub to: Location,
 }
 
 impl Span {
-    pub fn new() -> Span {
-        Span {
-            from: Location::new(),
-            to: Location::new(),
-        }
-    }
-
     pub fn combine(start: &Span, end: &Span) -> Span {
+        assert!(start.file_id == end.file_id);
         Span {
+            file_id: start.file_id,
             from: start.from,
             to: end.to,
         }
     }
 
     pub fn between(start: &Span, end: &Span) -> Span {
+        assert!(start.file_id == end.file_id);
         Span {
+            file_id: start.file_id,
             from: start.to,
             to: end.from,
-        }
-    }
-}
-
-impl Default for Span {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl From<(usize, usize)> for Span {
-    fn from(tuple: (usize, usize)) -> Span {
-        Span {
-            from: Location { offset: tuple.0 },
-            to: Location { offset: tuple.1 },
         }
     }
 }
