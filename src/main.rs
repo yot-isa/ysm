@@ -1,7 +1,3 @@
-use codespan_reporting::diagnostic::{Diagnostic, Label};
-use codespan_reporting::files::SimpleFiles;
-use codespan_reporting::term;
-use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use error::Error;
 use std::fs;
 use std::path::PathBuf;
@@ -9,11 +5,13 @@ use structopt::StructOpt;
 use span::{Location, Span, Spanned, Spanning};
 use tokenizer::token::{Token, DataLiteral};
 use instruction::YotType;
+use reporter::{Reporter, Report};
 
 mod emitter;
 mod error;
 mod instruction;
 mod reader;
+mod reporter;
 mod span;
 mod tokenizer;
 mod writer;
@@ -30,40 +28,30 @@ pub struct Config {
 
 fn main() {
     let config = Config::from_args();
-    let mut files: SimpleFiles<String, &str> = SimpleFiles::new();
-    let codespan_writer = StandardStream::stderr(ColorChoice::Always);
-    let codespan_config = codespan_reporting::term::Config::default();
+    let mut reporter = Reporter::new();
 
     let source_contents = match reader::read(&config.source_path) {
         Ok(source_contents) => source_contents,
         Err(err) => {
-            let diagnostic = Diagnostic::error().with_message(format!("{}", err));
-            term::emit(
-                &mut codespan_writer.lock(),
-                &codespan_config,
-                &files,
-                &diagnostic,
-            );
+            err.report(&reporter);
             return;
         }
     };
 
-    let file_id = files.add(
-        config.source_path.to_string_lossy().to_string(),
+    let file_id = reporter.add_file(
+        config.source_path,
         &source_contents,
     );
+    // let file_id = repoter.add_file(
+    //     config.source_path.to_string_lossy().to_string(),
+    //     &source_contents,
+    // );
 
     let tokens: Vec<Spanned<Token>> = match tokenizer::tokenize(&source_contents) {
         Ok(tokens) => tokens,
         Err(errs) => {
             for err in errs.iter() {
-                let diagnostic = Diagnostic::error().with_message(format!("{}", err));
-                term::emit(
-                    &mut codespan_writer.lock(),
-                    &codespan_config,
-                    &files,
-                    &diagnostic,
-                );
+                err.report(&reporter);
             }
             return;
         }
@@ -73,13 +61,7 @@ fn main() {
         Ok(binary) => binary,
         Err(errs) => {
             for err in errs.iter() {
-                let diagnostic = Diagnostic::error().with_message(format!("{}", err));
-                term::emit(
-                    &mut codespan_writer.lock(),
-                    &codespan_config,
-                    &files,
-                    &diagnostic,
-                );
+                err.report(&reporter);
             }
             return;
         }
@@ -88,13 +70,7 @@ fn main() {
     match writer::write(&config.output_path, &binary) {
         Ok(()) => (),
         Err(err) => {
-            let diagnostic = Diagnostic::error().with_message(format!("{}", err));
-            term::emit(
-                &mut codespan_writer.lock(),
-                &codespan_config,
-                &files,
-                &diagnostic,
-            );
+            err.report(&reporter);
             return;
         }
     }
