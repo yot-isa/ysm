@@ -41,7 +41,12 @@ fn main() {
         }
     };
 
-    let binary: Vec<u8> = match emitter::emit(&tokens, config.yot_type) {
+    let binary: Vec<u8> = match emitter::emit(
+        &tokens,
+        config.yot_type,
+        config.initial_data_stack_pointer,
+        config.initial_address_stack_pointer,
+    ) {
         Ok(binary) => binary,
         Err(errs) => {
             for err in errs.iter() {
