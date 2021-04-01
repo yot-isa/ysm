@@ -6,7 +6,7 @@ pub use error::Error;
 
 mod error;
 
-const LITERAL_ADDRESS_OPCODE: u8 = 0x02;
+const LITERAL_ADDRESS_OPCODE: u8 = 0x01;
 const LITERAL_DATA_OPCODE: u8 = 0x03;
 const JUMP_TO_SUBROUTINE_OPCODE: u8 = 0x30;
 
@@ -25,6 +25,21 @@ impl Binary {
         self.data.push(value);
     }
 
+    pub fn push2(&mut self, value: u16) {
+        self.push(((value & 0xff00) >> 8) as u8);
+        self.push((value & 0x00ff) as u8);
+    }
+
+    pub fn push4(&mut self, value: u32) {
+        self.push2(((value & 0xffff0000) >> 16) as u16);
+        self.push2((value & 0x0000ffff) as u16);
+    }
+
+    pub fn push8(&mut self, value: u64) {
+        self.push4(((value & 0xffffffff00000000) >> 32) as u32);
+        self.push4((value & 0x00000000ffffffff) as u32);
+    }
+
     pub fn push_address(&mut self, address: u64, yot_type: YotType) {
         for i in 0..yot_type as usize {
             let index = yot_type as usize - i - 1;
@@ -37,6 +52,12 @@ impl Binary {
         self.data[offset] = value;
     }
 
+    pub fn pad(&mut self, size: usize) {
+        while self.size() < size {
+            self.push(0x00);
+        }
+    }
+
     pub fn size(&self) -> usize {
         self.data.len()
     }
@@ -46,7 +67,13 @@ impl Binary {
     }
 }
 
-pub(super) fn emit(tokens: &[Spanned<Token>], yot_type: YotType, initial_data_stack_pointer: u64, initial_address_stack_pointer: u64) -> Result<Vec<u8>, Vec<Error>> {
+pub(super) fn emit(
+    tokens: &[Spanned<Token>],
+    yot_type: YotType,
+    initial_data_stack_pointer: u64,
+    initial_address_stack_pointer: u64,
+    exact_binary_size: Option<usize>,
+) -> Result<Vec<u8>, Vec<Error>> {
     let mut binary: Binary = Binary::new();
     let mut encountered_label_definitions: HashMap<String, (usize, Span)> = HashMap::new();
     let mut encountered_label_literals: HashMap<usize, Spanned<String>> = HashMap::new();
@@ -77,27 +104,15 @@ pub(super) fn emit(tokens: &[Spanned<Token>], yot_type: YotType, initial_data_st
                     }
                     DataLiteral::U16(value) => {
                         binary.push(LITERAL_DATA_OPCODE + 0x10);
-                        let mut shifted_value: u16 = *value;
-                        for _ in 0..2 {
-                            binary.push((shifted_value & 0xff) as u8);
-                            shifted_value >>= 8;
-                        }
+                        binary.push2(*value);
                     }
                     DataLiteral::U32(value) => {
                         binary.push(LITERAL_DATA_OPCODE + 0x20);
-                        let mut shifted_value: u32 = *value;
-                        for _ in 0..4 {
-                            binary.push((shifted_value & 0xff) as u8);
-                            shifted_value >>= 8;
-                        }
+                        binary.push4(*value);
                     }
                     DataLiteral::U64(value) => {
                         binary.push(LITERAL_DATA_OPCODE + 0x30);
-                        let mut shifted_value: u64 = *value;
-                        for _ in 0..8 {
-                            binary.push((shifted_value & 0xff) as u8);
-                            shifted_value >>= 8;
-                        }
+                        binary.push8(*value);
                     }
                 }
             }
@@ -138,6 +153,17 @@ pub(super) fn emit(tokens: &[Spanned<Token>], yot_type: YotType, initial_data_st
         for j in 0..yot_type as usize {
             binary.set(offset + yot_type as usize - 1 - j, (shifted_address & 0xff) as u8);
             shifted_address >>= 8;
+        }
+    }
+
+    if let Some(size) = exact_binary_size {
+        if binary.size() > size {
+            errors.push(Error::BinaryTooLarge {
+                current_size: binary.size(),
+                requested_size: size,
+            });
+        } else {
+            binary.pad(size);
         }
     }
 

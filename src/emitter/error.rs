@@ -13,6 +13,10 @@ pub enum Error {
         label: String,
         span: Span,
     },
+    BinaryTooLarge {
+        current_size: usize,
+        requested_size: usize,
+    },
 }
 
 impl Report for Error {
@@ -37,7 +41,11 @@ impl Report for Error {
                     span: *span,
                     message: "not found in this scope".to_owned(),
                 }],
-            })
+            }),
+            Error::BinaryTooLarge { current_size, requested_size } => r.write(Diagnostic {
+                message: format!("binary of size {} does not fit within the requested size constraint of {}", current_size, requested_size),
+                labels: vec![],
+            }),
         }
     }
 }
