@@ -46,6 +46,7 @@ fn main() {
         config.yot_type,
         config.initial_data_stack_pointer,
         config.initial_address_stack_pointer,
+        config.exact_binary_size,
     ) {
         Ok(binary) => binary,
         Err(errs) => {
