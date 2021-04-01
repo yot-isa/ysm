@@ -23,6 +23,12 @@ pub struct Config {
     /// Output binary file path
     #[structopt(name = "OUTPUT FILE", parse(from_os_str))]
     pub output_path: PathBuf,
+    /// Initial data stack pointer
+    #[structopt(long = "dsp")]
+    pub initial_data_stack_pointer: u64,
+    /// Initial address stack pointer
+    #[structopt(long = "asp")]
+    pub initial_address_stack_pointer: u64,
 }
 
 fn parse_yot_type(input: &str) -> Result<YotType, Error> {

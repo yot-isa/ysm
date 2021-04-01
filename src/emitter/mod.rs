@@ -10,35 +10,70 @@ const LITERAL_ADDRESS_OPCODE: u8 = 0x02;
 const LITERAL_DATA_OPCODE: u8 = 0x03;
 const JUMP_TO_SUBROUTINE_OPCODE: u8 = 0x30;
 
-pub(super) fn emit(tokens: &[Spanned<Token>], yot_type: YotType) -> Result<Vec<u8>, Vec<Error>> {
-    let mut binary: Vec<u8> = Vec::new();
-    let mut i: usize = 0;
+struct Binary {
+    data: Vec<u8>
+}
+
+impl Binary {
+    pub fn new() -> Binary {
+        Binary {
+            data: Vec::new(),
+        }
+    }
+
+    pub fn push(&mut self, value: u8) {
+        self.data.push(value);
+    }
+
+    pub fn push_address(&mut self, address: u64, yot_type: YotType) {
+        for i in 0..yot_type as usize {
+            let index = yot_type as usize - i - 1;
+            let mask = 0xff << (index * 2);
+            self.push((address & mask >> (index * 2)) as u8);
+        }
+    }
+
+    pub fn set(&mut self, offset: usize, value: u8) {
+        self.data[offset] = value;
+    }
+
+    pub fn size(&self) -> usize {
+        self.data.len()
+    }
+
+    pub fn data(&self) -> Vec<u8> {
+        self.data.clone()
+    }
+}
+
+pub(super) fn emit(tokens: &[Spanned<Token>], yot_type: YotType, initial_data_stack_pointer: u64, initial_address_stack_pointer: u64) -> Result<Vec<u8>, Vec<Error>> {
+    let mut binary: Binary = Binary::new();
     let mut encountered_label_definitions: HashMap<String, (usize, Span)> = HashMap::new();
     let mut encountered_label_literals: HashMap<usize, Spanned<String>> = HashMap::new();
     let mut errors: Vec<Error> = Vec::new();
+
+    binary.push_address(initial_data_stack_pointer, yot_type);
+    binary.push_address(initial_address_stack_pointer, yot_type);
+    binary.push_address(yot_type as u64 * 3, yot_type);
 
     for token in tokens.iter() {
         match token {
             Spanned { node: Token::PrimitiveInstruction(opcode), .. } => {
                 binary.push(*opcode);
-                i += 1;
             }
             Spanned { node: Token::SubroutineJump(label), span } => {
                 binary.push(LITERAL_ADDRESS_OPCODE);
-                i += 1;
-                encountered_label_literals.insert(i, label.clone().spanning(*span));
+                encountered_label_literals.insert(binary.size(), label.clone().spanning(*span));
                 for _ in 0..yot_type as usize {
                     binary.push(0x00);
                 }
                 binary.push(JUMP_TO_SUBROUTINE_OPCODE);
-                i += yot_type as usize + 1;
             }
             Spanned { node: Token::DataLiteral(data_literal), .. } => {
                 match data_literal {
                     DataLiteral::U8(value) => {
                         binary.push(LITERAL_DATA_OPCODE);
                         binary.push(*value);
-                        i += 2;
                     }
                     DataLiteral::U16(value) => {
                         binary.push(LITERAL_DATA_OPCODE + 0x10);
@@ -47,7 +82,6 @@ pub(super) fn emit(tokens: &[Spanned<Token>], yot_type: YotType) -> Result<Vec<u
                             binary.push((shifted_value & 0xff) as u8);
                             shifted_value >>= 8;
                         }
-                        i += 3;
                     }
                     DataLiteral::U32(value) => {
                         binary.push(LITERAL_DATA_OPCODE + 0x20);
@@ -56,7 +90,6 @@ pub(super) fn emit(tokens: &[Spanned<Token>], yot_type: YotType) -> Result<Vec<u
                             binary.push((shifted_value & 0xff) as u8);
                             shifted_value >>= 8;
                         }
-                        i += 5;
                     }
                     DataLiteral::U64(value) => {
                         binary.push(LITERAL_DATA_OPCODE + 0x30);
@@ -65,21 +98,15 @@ pub(super) fn emit(tokens: &[Spanned<Token>], yot_type: YotType) -> Result<Vec<u
                             binary.push((shifted_value & 0xff) as u8);
                             shifted_value >>= 8;
                         }
-                        i += 9;
                     }
                 }
             }
             Spanned { node: Token::AddressLiteral(address_literal), .. } => {
                 binary.push(LITERAL_ADDRESS_OPCODE);
-                let mut shifted_value: u64 = *address_literal;
-                for _ in 0..yot_type as usize {
-                    binary.push((shifted_value & 0xff) as u8);
-                    shifted_value >>= 8;
-                }
-                i += 1 + yot_type as usize;
+                binary.push_address(*address_literal, yot_type);
             }
             Spanned { node: Token::LabelDefinition(label), span } => {
-                if let Some((_, previous_span)) = encountered_label_definitions.insert(label.clone(), (i, *span)) {
+                if let Some((_, previous_span)) = encountered_label_definitions.insert(label.clone(), (binary.size(), *span)) {
                     errors.push(Error::LabelDefinedMoreThanOnce {
                         label: label.to_string(),
                         current_label_span: *span,
@@ -89,12 +116,10 @@ pub(super) fn emit(tokens: &[Spanned<Token>], yot_type: YotType) -> Result<Vec<u
             }
             Spanned { node: Token::LabelLiteral(label), span } => {
                 binary.push(LITERAL_ADDRESS_OPCODE);
-                i += 1;
-                encountered_label_literals.insert(i, label.clone().spanning(*span));
+                encountered_label_literals.insert(binary.size(), label.clone().spanning(*span));
                 for _ in 0..yot_type as usize {
                     binary.push(0x00);
                 }
-                i += yot_type as usize;
             }
         }
     }
@@ -111,13 +136,13 @@ pub(super) fn emit(tokens: &[Spanned<Token>], yot_type: YotType) -> Result<Vec<u
             }
         };
         for j in 0..yot_type as usize {
-            binary[offset + yot_type as usize - 1 - j] = (shifted_address & 0xff) as u8;
+            binary.set(offset + yot_type as usize - 1 - j, (shifted_address & 0xff) as u8);
             shifted_address >>= 8;
         }
     }
 
     if errors.is_empty() {
-        Ok(binary)
+        Ok(binary.data())
     } else {
         Err(errors)
     }
