@@ -9,6 +9,8 @@ pub enum Token {
     DataLiteral(Vec<u8>),
     LabelDefinition(String),
     LabelLiteral(String),
+    OpeningBrace,
+    ClosingBrace,
 }
 
 impl_spanning!(Token);

@@ -2,7 +2,7 @@ use super::Span;
 use std::fmt;
 use crate::reporter::{Diagnostic, Report, Reporter, Label, LabelStyle};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Error {
     LabelDefinedMoreThanOnce {
         label: String,

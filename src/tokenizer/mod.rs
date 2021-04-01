@@ -16,7 +16,7 @@ fn to_digit(string: &str) -> Option<u8> {
 }
 
 fn is_delimiter(string: &str) -> bool {
-    is_whitespace(string)
+    is_whitespace(string) || string == "{" || string == "}"
 }
 
 fn is_whitespace(string: &str) -> bool {
@@ -145,6 +145,14 @@ pub(super) fn tokenize(input_string: &str, file_id: usize) -> Result<Vec<Spanned
             };
         }
         match symbols.get(i) {
+            Some(Spanned { node: "{", span }) => {
+                tokens.push(Token::OpeningBrace.spanning(*span));
+                i += 1;
+            },
+            Some(Spanned { node: "}", span }) => {
+                tokens.push(Token::ClosingBrace.spanning(*span));
+                i += 1;
+            },
             Some(Spanned { node: ":", .. }) => match parse_identifier(&symbols, &mut i, true) {
                 Ok(Spanned { node: ld, span }) => {
                     tokens.push(Token::LabelDefinition(ld).spanning(span))

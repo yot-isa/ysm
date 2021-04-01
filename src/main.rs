@@ -4,11 +4,13 @@ use tokenizer::token::Token;
 use reporter::{Reporter, Report};
 use argument_parser::{Config, YotType};
 use instruction::{InstructionKind, get_instruction_kind, get_opcode};
+use parser::{Scope, Statement};
 
 mod argument_parser;
 mod emitter;
 mod error;
 mod instruction;
+mod parser;
 mod reader;
 mod reporter;
 mod span;
@@ -42,8 +44,18 @@ fn main() {
         }
     };
 
+    let ast: Spanned<Scope> = match parser::parse(&tokens) {
+        Ok(ast) => ast,
+        Err(errs) => {
+            for err in errs.iter() {
+                err.report(&reporter);
+            }
+            return;
+        }
+    };
+    
     let binary: Vec<u8> = match emitter::emit(
-        &tokens,
+        &ast,
         config.yot_type,
         config.initial_stack_pointer,
         config.exact_binary_size,
