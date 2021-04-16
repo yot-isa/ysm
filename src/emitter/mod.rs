@@ -1,10 +1,10 @@
 use super::span::{Span, Spanned, Spanning};
 use super::YotType;
-use super::Token;
 use std::collections::HashMap;
 pub use error::Error;
 use super::get_opcode;
 use super::InstructionKind;
+use super::{Scope, Statement};
 
 mod error;
 
@@ -151,7 +151,7 @@ impl AtomStream {
 }
 
 pub(super) fn emit(
-    tokens: &[Spanned<Token>],
+    ast: &Spanned<Scope>,
     yot_type: YotType,
     initial_stack_pointer: u64,
     exact_binary_size: Option<usize>,
@@ -161,7 +161,7 @@ pub(super) fn emit(
     atom_stream.push_address_literal(initial_stack_pointer);
     atom_stream.push_address_literal(yot_type as u64 * 2);
 
-    let nested_atom_stream = emit_tokens(tokens)?;
+    let nested_atom_stream = emit_scope(&ast)?;
     atom_stream.extend(nested_atom_stream.offseted(atom_stream.offset()));
 
     let mut binary: Vec<u8> = render(&atom_stream.atoms(), yot_type)?;
@@ -173,23 +173,23 @@ pub(super) fn emit(
     Ok(binary)
 }
 
-fn emit_tokens(tokens: &[Spanned<Token>]) -> Result<AtomStream, Vec<Error>> {
+fn emit_scope(Spanned { node: scope, .. }: &Spanned<Scope>) -> Result<AtomStream, Vec<Error>> {
     let mut errors: Vec<Error> = Vec::new();
     let mut atom_stream: AtomStream = AtomStream::new();
     let mut label_definitions: HashMap<String, (Offset, Span)> = HashMap::new();
 
-    for token in tokens.iter() {
-        match token {
-            Spanned { node: Token::PrimitiveInstruction(instruction_kind), .. } => {
+    for child in scope.children.iter() {
+        match &child {
+            Spanned { node: Statement::PrimitiveInstruction(instruction_kind), .. } => {
                 atom_stream.push_primitive_instruction(*instruction_kind);
             }
-            Spanned { node: Token::SubroutineJump(label), span } => {
+            Spanned { node: Statement::SubroutineJump(label), span } => {
                 atom_stream.push_subroutine_jump(label.clone(), *span);
             }
-            Spanned { node: Token::DataLiteral(byte_vector), .. } => {
+            Spanned { node: Statement::DataLiteral(byte_vector), .. } => {
                 atom_stream.push_data_literal(byte_vector.to_owned());
             }
-            Spanned { node: Token::LabelDefinition(label), span } => {
+            Spanned { node: Statement::LabelDefinition(label), span } => {
                 if let Some((_, previous_span)) = label_definitions.insert(label.to_owned(), (atom_stream.offset(), *span)) {
                     errors.push(Error::LabelDefinedMoreThanOnce {
                         label: label.to_string(),
@@ -198,8 +198,18 @@ fn emit_tokens(tokens: &[Spanned<Token>]) -> Result<AtomStream, Vec<Error>> {
                     });
                 }
             }
-            Spanned { node: Token::LabelLiteral(label), span } => {
+            Spanned { node: Statement::LabelLiteral(label), span } => {
                 atom_stream.push_label_literal(label.to_owned(), *span);
+            }
+            Spanned { node: Statement::Scope(nested_scope), span } => {
+                let nested_atom_stream = match emit_scope(&nested_scope.clone().spanning(*span)) {
+                    Ok(nested_atom_stream) => nested_atom_stream,
+                    Err(nested_errors) => {
+                        errors.extend(nested_errors);
+                        continue;
+                    }
+                };
+                atom_stream.extend(nested_atom_stream.offseted(atom_stream.offset()));
             }
         }
     }

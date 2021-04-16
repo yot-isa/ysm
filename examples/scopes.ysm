@@ -1,0 +1,28 @@
+d    ; [], [x, tores(d), x]
+
+:a   ; [(a, 3)], [x, tores(d), x]
+{    ; 3
+  :b ; [(a, 3)], [x, tores(d), x]  ;  [(b, 0)] []
+  :c ; [(a, 3)], [x, tores(d), x]  ;  [(b, 0), (c, 0)] []
+  @b ; [(a, 3)], [x, tores(d), x]  ;  [(b, 0), (c, 0)] [x, tores(b)]
+  @c ; [(a, 3)], [x, tores(d), x]  ;  [(b, 0), (c, 0)] [x, tores(b), x, tores(c)]
+  a  ; [(a, 3)], [x, tores(d), x]  ;  [(b, 0), (c, 0)] [x, tores(b), x, tores(c), x, tores(a), x]
+  d  ; [(a, 3)], [x, tores(d), x]  ;  [(b, 0), (c, 0)] [x, tores(b), x, tores(c), x, tores(a), x, x, tores(d), x]
+  {  ; 10
+    :e; ...  ;  [(e, 0)] []
+    e ; ...  ;  [(e, 0)] [x, tores(e), x]
+    c ; ...  ;  [(e, 0)] [x, tores(e), x, x, tores(c), x]
+  }  ; [(a, 3)], [x, tores(d), x]  ;  [(b, 0), (c, 0)] [x, tores(b), x, tores(c), x, tores(a), x, x, tores(d), x, x, res(0+10=10), x, x, tores(c), x]
+}    ; [(a, 3)], [x, tores(d), x, x, res(0+3=3), x, res(0+3=3), x, tores(a), x, x, tores(d), x, x, res(10+3=13), x, x, tores(0+3=3), x]
+
+:b   ; [(a, 3), (b, 13)], [x, tores(d), x, x, res(3), x, res(3), x, tores(a), x, x, tores(d), x, x, res(13), x]
+{    ; 
+  d  ; [(a, 3), (b, 13)], [x, tores(d), x, x, res(3), x, res(3), x, tores(a), x, x, tores(d), x, x, res(13), x]  ;  [] [x, tores(d), x]
+}    ; [(a, 3), (b, 13)], [x, tores(d), x, x, res(3), x, res(3), x, tores(a), x, x, tores(d), x, x, res(13), x, x, tores(d), x]
+
+:d   ; [(a, 3), (b, 13), (d, 16)], [x, tores(d), x, x, res(3), x, res(3), x, tores(a), x, x, tores(d), x, x, res(13), x, x, tores(d), x]
+{    ; 
+  brk; [(a, 3), (b, 13), (d, 16)], [x, tores(d), x, x, res(3), x, res(3), x, tores(a), x, x, tores(d), x, x, res(13), x, x, tores(d), x]  ;  [] [x]
+}    ; [(a, 3), (b, 13), (d, 16)], [x, tores(d), x, x, res(3), x, res(3), x, tores(a), x, x, tores(d), x, x, res(13), x, x, tores(d), x, x]
+     
+   ; [x, res(16), x, x, res(3), x, res(3), x, res(3), x, x, res(16), x, x, res(13), x, x, res(16), x, x]

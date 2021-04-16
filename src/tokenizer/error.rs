@@ -28,14 +28,6 @@ impl Report for Error {
                     message: String::new(),
                 }],
             }),
-            Error::DataLiteralTooLarge { span } => r.write(Diagnostic {
-                message: "data literal too large".to_owned(),
-                labels: vec![Label {
-                    style: LabelStyle::Primary,
-                    span: *span,
-                    message: String::new(),
-                }],
-            }),
             Error::IdentifierExpected { span } => r.write(Diagnostic {
                 message: "expected an identifier".to_owned(),
                 labels: vec![Label {

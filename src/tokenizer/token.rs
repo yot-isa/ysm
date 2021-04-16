@@ -1,6 +1,6 @@
 use super::{Span, Spanned, Spanning};
-use crate::impl_spanning;
 use super::InstructionKind;
+use crate::impl_spanning;
 
 #[derive(Debug, Clone)]
 pub enum Token {

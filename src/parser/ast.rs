@@ -1,13 +1,12 @@
-use super::{Token, DataLiteral};
 use super::{Span, Spanned, Spanning};
 use crate::impl_spanning;
+use super::InstructionKind;
 
 #[derive(Clone)]
 pub enum Statement {
-    PrimitiveInstruction(u8),
+    PrimitiveInstruction(InstructionKind),
     SubroutineJump(String),
-    DataLiteral(DataLiteral),
-    AddressLiteral(u64),
+    DataLiteral(Vec<u8>),
     LabelDefinition(String),
     LabelLiteral(String),
     Scope(Scope),

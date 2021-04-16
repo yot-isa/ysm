@@ -1,0 +1,80 @@
+#04ff
+#0503
+add2
+
+:add2
+  ; 04 ff 05 03
+  rtf1
+  ; 04 03 ff 05
+  swp1
+  ; 04 03 05 ff
+  rtb1
+  ; 04 05 ff 03
+  adc1
+  ; 04 05 02 01
+  swp1
+  ; 04 05 01 02
+
+:and2
+  ; a0 a1 b0 b1
+  rtb1
+  ; a0 b0 b1 a1
+  and1
+  ; a0 b0 c1
+  rtf1
+  ; c1 a0 b0
+  and1
+  ; c1 c0
+  swp1
+  ; c0 c1
+
+!(for i [1, 2, 4, 8] (
+  :!(concat and (str i)) {
+    !(repeat i (
+      sts
+      psh !(- i 1) pck
+      and
+    ))
+    !(repeat i (
+      drp
+    ))
+    !(repeat i (
+      rtn
+    ))
+    jmp
+  }
+))
+
+:and4
+  ; a0 a1 a2 a3 b0 b1 b2 b3
+  ;
+  sts1
+  #3 pick
+  and1
+  ; a0 a1 a2 a3 b0 b1 b2
+  ; c3
+  sts1
+  #3 pick
+  and1
+  ; a0 a1 a2 a3 b0 b1
+  ; c3 c2
+  sts1
+  #3 pick
+  and1
+  ; a0 a1 a2 a3 b0
+  ; c3 c2 c1
+  sts1
+  #3 pick
+  and1
+  ; a0 a1 a2 a3
+  ; c3 c2 c1 c0
+  drp1
+  drp1
+  drp1
+  drp1
+  rtn
+  rtn
+  rtn
+  rtn
+  ; c0 c1 c2 c3
+  ;
