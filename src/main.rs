@@ -1,8 +1,9 @@
 use structopt::StructOpt;
 use span::{Span, Spanned};
-use tokenizer::token::{Token, DataLiteral};
+use tokenizer::token::Token;
 use reporter::{Reporter, Report};
 use argument_parser::{Config, YotType};
+use instruction::{InstructionKind, get_instruction_kind, get_opcode};
 
 mod argument_parser;
 mod emitter;
@@ -44,8 +45,7 @@ fn main() {
     let binary: Vec<u8> = match emitter::emit(
         &tokens,
         config.yot_type,
-        config.initial_data_stack_pointer,
-        config.initial_address_stack_pointer,
+        config.initial_stack_pointer,
         config.exact_binary_size,
     ) {
         Ok(binary) => binary,

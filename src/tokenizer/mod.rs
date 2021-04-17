@@ -1,8 +1,8 @@
-use super::instruction::MNEMONICS;
 use super::span::{Location, Span, Spanned, Spanning};
 pub use error::Error;
-use token::{DataLiteral, Token};
+use token::Token;
 use unicode_segmentation::UnicodeSegmentation;
+use super::{InstructionKind, get_instruction_kind};
 
 pub mod error;
 pub mod token;
@@ -11,8 +11,8 @@ fn is_digit(string: &str) -> bool {
     matches!(string.chars().next(), Some(ch) if ch.is_digit(16))
 }
 
-fn to_digit(string: &str) -> Option<u32> {
-    string.chars().next().and_then(|ch| ch.to_digit(16))
+fn to_digit(string: &str) -> Option<u8> {
+    string.chars().next().and_then(|ch| ch.to_digit(16).map(|v| v as u8))
 }
 
 fn is_delimiter(string: &str) -> bool {
@@ -79,64 +79,33 @@ fn parse_identifier<'a>(
 fn parse_data_literal<'a>(
     symbols: &[Spanned<&'a str>],
     i: &mut usize,
-) -> Result<Spanned<DataLiteral>, Error> {
+) -> Result<Spanned<Vec<u8>>, Error> {
     let os = symbols.get(*i).unwrap().span;
     let mut oe = os;
-    let mut value: u64 = 0;
-    let mut length: usize = 0;
+    let mut byte: u8 = 0;
+    let mut even_nibble: bool = false;
+    let mut byte_vector: Vec<u8> = Vec::new();
     *i += 1;
     loop {
         match symbols.get(*i) {
             Some(Spanned { node: c, span: o }) if is_digit(c) => {
-                value = (value << 4) + to_digit(c).unwrap() as u64;
+                byte = (byte << 4) + to_digit(c).unwrap();
+                if even_nibble {
+                    byte_vector.push(byte);
+                    byte = 0;
+                }
                 oe = *o;
-                length += 1;
+                even_nibble = !even_nibble;
                 *i += 1;
             }
             Some(Spanned { node: c, span: o }) if !is_delimiter(c) => {
                 return Err(Error::DigitInvalid { digit: c.chars().next().unwrap(), span: *o });
             }
             _ => {
-                return Ok(match length {
-                    0 => return Err(Error::DigitExpected { span: os }),
-                    1..=2 => DataLiteral::U8(value as u8),
-                    3..=4 => DataLiteral::U16(value as u16),
-                    5..=8 => DataLiteral::U32(value as u32),
-                    9..=16 => DataLiteral::U64(value as u64),
-                    _ => return Err(Error::DataLiteralTooLarge { span: Span::combine(&os, &oe) }),
+                if byte_vector.len() == 0 {
+                    return Err(Error::DigitExpected { span: os });
                 }
-                .spanning(Span::combine(&os, &oe)));
-            }
-        }
-    }
-}
-
-fn parse_address_literal<'a>(
-    symbols: &[Spanned<&'a str>],
-    i: &mut usize,
-) -> Result<Spanned<u64>, Error> {
-    let os = symbols.get(*i).unwrap().span;
-    let mut oe = os;
-    let mut value: u64 = 0;
-    let mut length: usize = 0;
-    *i += 1;
-    loop {
-        match symbols.get(*i) {
-            Some(Spanned { node: c, span: o }) if is_digit(c) => {
-                value = (value << 4) + to_digit(c).unwrap() as u64;
-                oe = *o;
-                length += 1;
-                *i += 1;
-            }
-            Some(Spanned { node: c, span: o }) if !is_delimiter(c) => {
-                return Err(Error::DigitInvalid { digit: c.chars().next().unwrap(), span: *o });
-            }
-            _ => {
-                return Ok(match length {
-                    0 => return Err(Error::DigitExpected { span: os }),
-                    _ => value,
-                }
-                .spanning(Span::combine(&os, &oe)));
+                return Ok(byte_vector.spanning(Span::combine(&os, &oe)));
             }
         }
     }
@@ -196,16 +165,10 @@ pub(super) fn tokenize(input_string: &str, file_id: usize) -> Result<Vec<Spanned
                     Err(err) => errors.push(err),
                 };
             }
-            Some(Spanned { node: "%", .. }) => match parse_address_literal(&symbols, &mut i) {
-                Ok(Spanned { node: value, span }) => {
-                    tokens.push(Token::AddressLiteral(value).spanning(span))
-                }
-                Err(err) => errors.push(err),
-            },
             Some(Spanned { .. }) => match parse_identifier(&symbols, &mut i, false) {
                 Ok(Spanned { node: id, span }) => {
-                    if let Some(opcode) = MNEMONICS.iter().position(|&m| m == id) {
-                        tokens.push(Token::PrimitiveInstruction(opcode as u8).spanning(span));
+                    if let Some(instruction_kind) = get_instruction_kind(&id) {
+                        tokens.push(Token::PrimitiveInstruction(instruction_kind).spanning(span));
                     } else {
                         tokens.push(Token::SubroutineJump(id).spanning(span));
                     }

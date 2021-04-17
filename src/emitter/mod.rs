@@ -1,14 +1,14 @@
 use super::span::{Span, Spanned, Spanning};
 use super::YotType;
-use super::{Token, DataLiteral};
+use super::Token;
 use std::collections::HashMap;
 pub use error::Error;
+use super::get_opcode;
 
 mod error;
 
-const LITERAL_ADDRESS_OPCODE: u8 = 0x01;
-const LITERAL_DATA_OPCODE: u8 = 0x03;
-const JUMP_TO_SUBROUTINE_OPCODE: u8 = 0x30;
+const PUSH_OPCODE: u8 = 0x20;
+const JUMP_TO_SUBROUTINE_OPCODE: u8 = 0x72;
 
 struct Binary {
     data: Vec<u8>
@@ -23,21 +23,6 @@ impl Binary {
 
     pub fn push(&mut self, value: u8) {
         self.data.push(value);
-    }
-
-    pub fn push2(&mut self, value: u16) {
-        self.push(((value & 0xff00) >> 8) as u8);
-        self.push((value & 0x00ff) as u8);
-    }
-
-    pub fn push4(&mut self, value: u32) {
-        self.push2(((value & 0xffff0000) >> 16) as u16);
-        self.push2((value & 0x0000ffff) as u16);
-    }
-
-    pub fn push8(&mut self, value: u64) {
-        self.push4(((value & 0xffffffff00000000) >> 32) as u32);
-        self.push4((value & 0x00000000ffffffff) as u32);
     }
 
     pub fn push_address(&mut self, address: u64, yot_type: YotType) {
@@ -70,8 +55,7 @@ impl Binary {
 pub(super) fn emit(
     tokens: &[Spanned<Token>],
     yot_type: YotType,
-    initial_data_stack_pointer: u64,
-    initial_address_stack_pointer: u64,
+    initial_stack_pointer: u64,
     exact_binary_size: Option<usize>,
 ) -> Result<Vec<u8>, Vec<Error>> {
     let mut binary: Binary = Binary::new();
@@ -79,46 +63,27 @@ pub(super) fn emit(
     let mut encountered_label_literals: HashMap<usize, Spanned<String>> = HashMap::new();
     let mut errors: Vec<Error> = Vec::new();
 
-    binary.push_address(initial_data_stack_pointer, yot_type);
-    binary.push_address(initial_address_stack_pointer, yot_type);
+    binary.push_address(initial_stack_pointer, yot_type);
     binary.push_address(yot_type as u64 * 3, yot_type);
 
     for token in tokens.iter() {
         match token {
-            Spanned { node: Token::PrimitiveInstruction(opcode), .. } => {
-                binary.push(*opcode);
+            Spanned { node: Token::PrimitiveInstruction(instruction_kind), .. } => {
+                binary.push(get_opcode(instruction_kind));
             }
             Spanned { node: Token::SubroutineJump(label), span } => {
-                binary.push(LITERAL_ADDRESS_OPCODE);
                 encountered_label_literals.insert(binary.size(), label.clone().spanning(*span));
                 for _ in 0..yot_type as usize {
+                    binary.push(PUSH_OPCODE);
                     binary.push(0x00);
                 }
                 binary.push(JUMP_TO_SUBROUTINE_OPCODE);
             }
-            Spanned { node: Token::DataLiteral(data_literal), .. } => {
-                match data_literal {
-                    DataLiteral::U8(value) => {
-                        binary.push(LITERAL_DATA_OPCODE);
-                        binary.push(*value);
-                    }
-                    DataLiteral::U16(value) => {
-                        binary.push(LITERAL_DATA_OPCODE + 0x10);
-                        binary.push2(*value);
-                    }
-                    DataLiteral::U32(value) => {
-                        binary.push(LITERAL_DATA_OPCODE + 0x20);
-                        binary.push4(*value);
-                    }
-                    DataLiteral::U64(value) => {
-                        binary.push(LITERAL_DATA_OPCODE + 0x30);
-                        binary.push8(*value);
-                    }
+            Spanned { node: Token::DataLiteral(byte_vector), .. } => {
+                for byte in byte_vector.iter() {
+                    binary.push(PUSH_OPCODE);
+                    binary.push(*byte);
                 }
-            }
-            Spanned { node: Token::AddressLiteral(address_literal), .. } => {
-                binary.push(LITERAL_ADDRESS_OPCODE);
-                binary.push_address(*address_literal, yot_type);
             }
             Spanned { node: Token::LabelDefinition(label), span } => {
                 if let Some((_, previous_span)) = encountered_label_definitions.insert(label.clone(), (binary.size(), *span)) {
@@ -130,9 +95,11 @@ pub(super) fn emit(
                 }
             }
             Spanned { node: Token::LabelLiteral(label), span } => {
-                binary.push(LITERAL_ADDRESS_OPCODE);
                 encountered_label_literals.insert(binary.size(), label.clone().spanning(*span));
                 for _ in 0..yot_type as usize {
+                    // Na jutro: tu i wyżej trzeba jakos zamienic na enumy tak jak na branchu ze
+                    // scopami
+                    binary.push(PUSH_OPCODE);
                     binary.push(0x00);
                 }
             }
