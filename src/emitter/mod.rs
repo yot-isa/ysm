@@ -211,7 +211,7 @@ fn emit_tokens(tokens: &[Spanned<Token>]) -> Result<AtomStream, Vec<Error>> {
     }
 }
 
-fn render(atoms: &Vec<Atom>, yot_type: YotType) -> Result<Vec<u8>, Vec<Error>> {
+fn render(atoms: &[Atom], yot_type: YotType) -> Result<Vec<u8>, Vec<Error>> {
     let mut binary: Vec<u8> = Vec::new();
     let mut errors: Vec<Error> = Vec::new();
 

@@ -27,7 +27,7 @@ fn is_whitespace(string: &str) -> bool {
     matches!(string.chars().next(), Some(ch) if ch.is_whitespace())
 }
 
-fn scan<'a>(string: &'a str, file_id: usize) -> Vec<Spanned<&'a str>> {
+fn scan(string: &str, file_id: usize) -> Vec<Spanned<&str>> {
     string
         .graphemes(true)
         .scan(Location { offset: 0 }, |location, grapheme| {
@@ -102,7 +102,7 @@ fn parse_data_literal<'a>(
                 return Err(Error::DigitInvalid { digit: c.chars().next().unwrap(), span: *o });
             }
             _ => {
-                if byte_vector.len() == 0 {
+                if byte_vector.is_empty() {
                     return Err(Error::DigitExpected { span: os });
                 }
                 return Ok(byte_vector.spanning(Span::combine(&os, &oe)));

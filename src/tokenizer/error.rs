@@ -21,7 +21,7 @@ impl Report for Error {
                 }],
             }),
             Error::DigitExpected { span } => r.write(Diagnostic {
-                message: format!("expected a digit"),
+                message: "expected a digit".to_owned(),
                 labels: vec![Label {
                     style: LabelStyle::Primary,
                     span: *span,
@@ -29,7 +29,7 @@ impl Report for Error {
                 }],
             }),
             Error::IdentifierExpected { span } => r.write(Diagnostic {
-                message: format!("expected an identifier"),
+                message: "expected an identifier".to_owned(),
                 labels: vec![Label {
                     style: LabelStyle::Primary,
                     span: *span,
