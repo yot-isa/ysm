@@ -1,4 +1,3 @@
-use codespan_reporting;
 use std::path::PathBuf;
 use super::Span;
 
@@ -78,7 +77,7 @@ pub trait Report {
 fn with_blue(blue: codespan_reporting::term::termcolor::Color) -> codespan_reporting::term::Styles {
     use codespan_reporting::term::{termcolor::{Color, ColorSpec}, Styles};
 
-    let header = ColorSpec::new().set_bold(true).set_intense(true).clone();
+    let mut header = ColorSpec::new().set_bold(true).set_intense(true).clone();
 
     Styles {
         header_bug: header.clone().set_fg(Some(Color::Red)).clone(),
@@ -97,6 +96,6 @@ fn with_blue(blue: codespan_reporting::term::termcolor::Color) -> codespan_repor
 
         line_number: header.clone().set_fg(Some(blue)).clone(),
         source_border: header.clone().set_fg(Some(blue)).clone(),
-        note_bullet: header.clone().set_fg(Some(blue)).clone(),
+        note_bullet: header.set_fg(Some(blue)).clone(),
     }
 }

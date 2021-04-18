@@ -24,11 +24,8 @@ pub struct Config {
     #[structopt(name = "OUTPUT FILE", parse(from_os_str))]
     pub output_path: PathBuf,
     /// Initial data stack pointer
-    #[structopt(short = "d", long = "dsp")]
-    pub initial_data_stack_pointer: u64,
-    /// Initial address stack pointer
-    #[structopt(short = "a", long = "asp")]
-    pub initial_address_stack_pointer: u64,
+    #[structopt(long = "sp")]
+    pub initial_stack_pointer: u64,
     /// Binary size
     #[structopt(short = "s", long = "exact-size")]
     pub exact_binary_size: Option<usize>,

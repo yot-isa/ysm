@@ -1,0 +1,46 @@
+;
+#03
+; 03
+#06
+; 03 06
+mul
+; 12
+brk
+
+:mul
+  ; 03 06 retaddr
+  #02 ins ; rtf
+  ; retaddr 03 06
+  #00
+  ; retaddr 03 06 00
+  #01 swc ; swp
+:loop
+  ; retaddr 03 00 06
+  #00 pck ; dup
+  ; retaddr 03 00 06 06
+  #00 equ ; eqz
+  ; retaddr 03 00 06 00
+  @end bnc
+  ; retaddr 03 00 06
+  #02 ins ; rtf
+  ; retaddr 06 03 00
+  #01 pck ; ovr
+  ; retaddr 06 03 00 03
+  add
+  ; retaddr 06 03 03
+  #02 rol ; rtb
+  ; retaddr 03 03 06
+  #01 sub ; dec
+  ; retaddr 03 03 05
+  @loop jmp
+:end
+  ; retaddr 03 12 00
+  drp
+  ; retaddr 03 12
+  #01 swc ; swp
+  ; retaddr 12 03
+  drp
+  ; retaddr 12
+  #01 swc ; swp
+  ; 12 retaddr
+  jmp
